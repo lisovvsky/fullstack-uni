@@ -1,70 +1,57 @@
-import Course from './components/Course.jsx'
-
-// eslint-disable-next-line react/prop-types
-const H1Header = ({ header }) => <h1>{header}</h1>
+import Course from './component/Course'
 
 const App = () => {
-    const courses = [
+  const courses = [
+    {
+      name: 'Half Stack application development',
+      id: 1,
+      parts: [
         {
-            name: 'Half Stack application development',
-            id: 1,
-            parts: [
-                {
-                    name: 'Fundamentals of React',
-                    exercises: 10,
-                    id: 1
-                },
-                {
-                    name: 'Using props to pass data',
-                    exercises: 7,
-                    id: 2
-                },
-                {
-                    name: 'State of a component',
-                    exercises: 14,
-                    id: 3
-                },
-                {
-                    name: 'Redux',
-                    exercises: 11,
-                    id: 4
-                }
-            ]
+          name: 'Fundamentals of React',
+          exercises: 10,
+          id: 1
         },
         {
-            name: 'Node.js',
-            id: 2,
-            parts: [
-                {
-                    name: 'Routing',
-                    exercises: 3,
-                    id: 1
-                },
-                {
-                    name: 'Middlewares',
-                    exercises: 7,
-                    id: 2
-                }
-            ]
+          name: 'Using props to pass data',
+          exercises: 7,
+          id: 2
+        },
+        {
+          name: 'State of a component',
+          exercises: 14,
+          id: 3
+        },
+        {
+          name: 'Redux',
+          exercises: 11,
+          id: 4
         }
-    ]
-
-    if (courses.length > 0) {
-        return (
-            <div>
-                <H1Header header='Web develepment curriculum' />
-                {courses.map((course) => (
-                    <Course key={course.id} course={course} />
-                ))}
-            </div>
-        )
+      ]
+    },
+    {
+      name: 'Node.js',
+      id: 2,
+      parts: [
+        {
+          name: 'Routing',
+          exercises: 3,
+          id: 1
+        },
+        {
+          name: 'Middlewares',
+          exercises: 7,
+          id: 2
+        }
+      ]
     }
-    return (
-        <div>
-            <H1Header header='Web develepment curriculum' />
-            <p>Course curriculum is empty.</p>
-        </div>
-    )
+  ]
+
+return(
+  <div>
+    <Course courses={courses} />
+  </div>
+)
+
 }
 
-export default App;
+export default App

@@ -1,165 +1,135 @@
-import React, { useEffect, useState } from 'react'
-
-import Alert from './components/Alert'
-import Filter from './components/Filter'
-import PersonForm from './components/PersonForm'
-import Persons from './components/Persons'
-import Notification from './components/Notification'
-
+import React, { useState, useEffect } from 'react'
 import personService from './services/persons'
 
+import Persons from './components/Persons'
+import PersonForm from './components/PersonForm'
+import Filter from './components/Filter'
+import Notification from './components/Notification'
+
+import './index.css'
+
 const App = () => {
-    const [ persons, setPersons ] = useState([])
+    const [ persons, setPersons] = useState([])
     const [ newName, setNewName ] = useState('')
     const [ newNumber, setNewNumber ] = useState('')
-    const [ filter, setFilter ] = useState('')
-    const [ notification, setNotification ] = useState(null)
+    const [ newFilter, setNewFilter ] = useState('')
+    const [ notificationMessage, setNotificationMessage] = useState(null)
 
-    const getAllHook = () => {
-        personService
-            .getAll()
-            .then(initialPersons => {
-                setPersons(initialPersons)
-            })
-            .catch(error =>
-                console.error(error)
-            )
-    }
+    const personsToShow = newFilter.length === 0 ? persons
+                            : persons.filter(person => person.name.search(newFilter) >= 0)
 
-    useEffect(getAllHook, [])
+    useEffect(() => {
+        const dataHook = () => {
+            personService
+                .getAll()
+                .then(initialPersons => {
+                    setPersons(initialPersons)
+                })
+        }
 
-    const addPerson = (event) => {
-        event.preventDefault()
-        const personObject = {
+        dataHook()
+    }, []);
+
+    const addContact = (e) => {
+        e.preventDefault();
+
+        const newPersonObject = {
             name: newName,
             number: newNumber
         }
 
-        const checkPerson = persons.find(person =>
-            person.name.toLowerCase() === personObject.name.toLowerCase())
+        const msg = `${ newName } is already added to phonebook, replace the old number with a new one?`
+        const duplicatePerson = persons.find(p => p.name === newName);
 
-        if (checkPerson && checkPerson.number === newNumber) {
-            Alert(personObject)
-        }
-        if (checkPerson && checkPerson.number !== newNumber) {
-            const confirmNewNumber = window.confirm(`Are you sure you want update ${checkPerson.name}'s number with a new one?`)
-
-            if (confirmNewNumber) {
-                const personUpdate = { ...checkPerson, number: newNumber }
+        // using truthy to check if duplicate is found
+        if (duplicatePerson) {
+            if (window.confirm(msg) === true) {
                 personService
-                    .update(checkPerson.id, personUpdate)
-                    .then(returnedPerson =>{
-                        setPersons(
-                            persons
-                                .map(person =>
-                                    person.id !== checkPerson.id
-                                        ? person
-                                        : returnedPerson
-                                )
-                        )
-                        setNotification({
-                            text: `${checkPerson.name}'s number was updated.`,
-                            type: 'notification'
+                    .update(duplicatePerson.id, newPersonObject)
+                    .then(returnedPerson => {
+
+                        setNotificationMessage({
+                            "text": `Updated ${ returnedPerson.name }`,
+                            "type": "notification"
                         })
-                        setTimeout(() => setNotification(null), 5000)
+
+                        setTimeout(() => {
+                            setNotificationMessage(null)
+                        }, 5000)
+
+                        setPersons(persons.map(p => p.id !== duplicatePerson.id ? p : returnedPerson))
                     })
-                    .catch(error =>
-                        setPersons(persons
-                            .filter(person =>
-                                person.name !== checkPerson.name
-                            )
-                        )
-                    )
-                setNotification({
-                    text: `${checkPerson.name} has already been deleted from the server.`,
-                    type: 'error'
-                })
-                setTimeout(() => {
-                    setNotification(null)
-                }, 5000)
             }
-        }
-        if (!checkPerson) {
+        } else {
             personService
-                .create(personObject)
+                .create(newPersonObject)
                 .then(returnedPerson => {
+
+                    setNotificationMessage({
+                        "text": `Added ${ returnedPerson.name }`,
+                        "type": "notification"
+                    })
+
+                    setTimeout(() => {
+                        setNotificationMessage(null)
+                    }, 5000)
+
                     setPersons(persons.concat(returnedPerson))
                 })
-                .catch(error => {
-                    setNotification({
-                        text: error.response.data.error,
-                        type: 'error'
-                    })
-                    setTimeout(() => {
-                        setNotification(null)
-                    }, 5000)
-                })
-            setNotification({
-                text: `${personObject.name} added to the phonebook.`,
-                type: 'notification'
-            })
-            setTimeout(() => {
-                setNotification(null)
-            }, 5000)
         }
-        setNewName('')
-        setNewNumber('')
     }
 
-    const deletePerson = (id) => {
-        const person = persons.find(p => p.id === id)
-        const confirmDelete = window.confirm(`Are you sure you want to delete ${person.name}?`)
+    const destroyContact = (e) => {
+        const id = Number(e.target.id)
+        const name = e.target.name
+        const msg = `Do you really want to delete ${ name }?`
 
-        if (confirmDelete) {
+        if (window.confirm(msg) === true) {
             personService
-                .remove(id)
-                .then(returnedPerson => {
-                    persons.map(person => person.id !== id ? person : returnedPerson)
+                .destroy(id)
+                .then(destroyedPerson => {
+                    setPersons(persons.filter(p => p.id !== id))
                 })
-            setPersons(persons.filter(person => person.id !== id))
-            setNotification({
-                text: `${person.name} was deleted from the phonebook.`,
-                type: 'notification'
-            })
-            setTimeout(() => {
-                setNotification(null)
-            }, 5000)
+                .catch(error => {
+                    setNotificationMessage({
+                        "text": `The person, ${ name } was already removed from server`,
+                        "type": "error"
+                    })
+
+                    setTimeout(() => {
+                        setNotificationMessage(null)
+                    }, 5000)
+
+                    setPersons(persons.filter(p => p.id !== id))
+                })
         }
     }
 
-    const handleNameChange = (event) => {
-        setNewName(event.target.value)
-    }
-
-    const handleFilter = (event) => {
-        setFilter(event.target.value)
-    }
-
-    const personsAfterFilter =
-        filter === ''  ? persons : persons.filter(person =>
-            person.name.toLowerCase().includes(filter.toLowerCase()))
+    const handleNameChange = (e) => setNewName(e.target.value)
+    const handleNumberChange = (e) => setNewNumber(e.target.value)
+    const handleFilterChange = (e) => setNewFilter(new RegExp(e.target.value, 'ig'))
 
     return (
         <div>
             <h2>Phonebook</h2>
-            <Notification notification={notification} />
+
+            { notificationMessage !== null ? <Notification message={ notificationMessage } /> : null }
+
             <Filter
-                filter={filter}
-                handleFilter={handleFilter}
+                handleFilterChange={ (e) => { handleFilterChange(e) } }
             />
-            <h3>Add a new</h3>
+
+            <h2>Add a new</h2>
             <PersonForm
-                addPerson={addPerson}
-                newName={newName}
-                handleNameChange={handleNameChange}
-                newNumber={newNumber}
-                handleNumberChange={handleNumberChange}
+                addContact={ (e) => addContact(e) }
+                handleNameChange={ (e) => handleNameChange(e) }
+                handleNumberChange= { (e) => handleNumberChange(e) }
             />
-            <h3>Numbers</h3>
+
+            <h2>Numbers</h2>
             <Persons
-                persons={personsAfterFilter}
-                person={personsAfterFilterNumber}
-                deletePerson={deletePerson}
+                persons={ personsToShow }
+                destroyContact={ (e) => destroyContact(e) }
             />
         </div>
     )

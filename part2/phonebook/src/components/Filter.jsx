@@ -1,16 +1,12 @@
-import React from 'react';
+import React from 'react'
 
-const Filter = ({ filter, handleFilter }) => (
-    <div>
-        <form>
-            <div>
-                filter shown with number<input
-                value={filter}
-                onChange={handleFilter}
-            />
-            </div>
-        </form>
-    </div>
-)
+const Filter = ({ handleFilterChange }) => {
+    return (
+        <div>
+            filter shown with:
+            <input onChange={ handleFilterChange }/>
+        </div>
+    )
+}
 
-export default Filter;
+export default Filter
